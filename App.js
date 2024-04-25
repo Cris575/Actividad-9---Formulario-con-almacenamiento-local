@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 import { View, TextInput, Button, FlatList, Text, StyleSheet, Alert } from "react-native";
 
 const App = () => {
-  const [task, setTask] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [editMode, setEditMode] = useState(false);
-  const [editTaskId, setEditTaskId] = useState(null);
   const filePath = FileSystem.documentDirectory + "tasks.json";
 
   useEffect(() => {
@@ -27,48 +27,17 @@ const App = () => {
 
   const addTask = async () => {
     try {
-      const newTask = { id: Date.now(), task, description };
+      const newTask = { id: Date.now(), name, lastName, email, password };
       const updatedTasks = [...tasks, newTask];
       await FileSystem.writeAsStringAsync(filePath, JSON.stringify(updatedTasks));
       setTasks(updatedTasks);
-      setTask("");
-      setDescription("");
+      setName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
     } catch (error) {
       console.error("Error al agregar tarea", error);
     }
-  };
-
-  const editTask = async () => {
-    try {
-      const updatedTasks = tasks.map((item) => {
-        if (item.id === editTaskId) {
-          return { ...item, task, description };
-        }
-        return item;
-      });
-      await FileSystem.writeAsStringAsync(filePath, JSON.stringify(updatedTasks));
-      setTasks(updatedTasks);
-      setEditMode(false);
-      setTask("");
-      setDescription("");
-      setEditTaskId(null);
-    } catch (error) {
-      console.error("Error al editar tarea", error);
-    }
-  };
-
-  const startEdit = (id, task, description) => {
-    setEditMode(true);
-    setEditTaskId(id);
-    setTask(task);
-    setDescription(description);
-  };
-
-  const cancelEdit = () => {
-    setEditMode(false);
-    setTask("");
-    setDescription("");
-    setEditTaskId(null);
   };
 
   const deleteTask = async (id) => {
@@ -96,28 +65,26 @@ const App = () => {
   return (
     <View style={styles.container}>
       <TaskForm
-        task={task}
-        setTask={setTask}
-        description={description}
-        setDescription={setDescription}
+        name={name}
+        setName={setName}
+        lastName={lastName}
+        setLastName={setLastName}
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
         addTask={addTask}
-        editMode={editMode}
-        editTask={editTask}
-        cancelEdit={cancelEdit}
       />
       <FlatList
         data={tasks}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.taskContainer}>
-            <Text style={styles.taskText}>Tarea: {item.task}</Text>
-            <Text style={styles.taskText}>Descripción: {item.description}</Text>
+            <Text style={styles.taskText}>Nombre: {item.name}</Text>
+            <Text style={styles.taskText}>Apellido: {item.lastName}</Text>
+            <Text style={styles.taskText}>Correo: {item.email}</Text>
+            <Text style={styles.taskText}>Contraseña: {item.password}</Text>
             <View style={styles.buttonContainer}>
-              <Button
-                title="Editar"
-                style={styles.button}
-                onPress={() => startEdit(item.id, item.task, item.description)}
-              />
               <Button title="Borrar" onPress={() => confirmDelete(item.id)} />
             </View>
           </View>
@@ -128,32 +95,34 @@ const App = () => {
 };
 
 const TaskForm = ({
-  task,
-  setTask,
-  description,
-  setDescription,
+  name,
+  setName,
+  lastName,
+  setLastName,
+  email,
+  setEmail,
+  password,
+  setPassword,
   addTask,
-  editMode,
-  editTask,
-  cancelEdit,
 }) => {
   return (
     <View style={styles.formContainer}>
-      <TextInput style={styles.input} placeholder="Tarea" value={task} onChangeText={setTask} />
+      <TextInput style={styles.input} placeholder="Nombre" value={name} onChangeText={setName} />
       <TextInput
         style={styles.input}
-        placeholder="Descripción"
-        value={description}
-        onChangeText={setDescription}
+        placeholder="Apellido"
+        value={lastName}
+        onChangeText={setLastName}
       />
-      {editMode ? (
-        <View style={styles.buttonContainer}>
-          <Button title="Editar tarea" onPress={editTask} />
-          <Button title="Cancelar" style={styles.button} onPress={cancelEdit} />
-        </View>
-      ) : (
-        <Button title="Agregar" onPress={addTask} />
-      )}
+      <TextInput style={styles.input} placeholder="Correo" value={email} onChangeText={setEmail} />
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        secureTextEntry={true}
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button title="Agregar" onPress={addTask} />
     </View>
   );
 };
@@ -176,9 +145,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "gray",
     borderRadius: 5,
-  },
-  button: {
-    marginLeft: 10,
   },
   taskContainer: {
     marginBottom: 10,
