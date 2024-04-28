@@ -8,6 +8,8 @@ const App = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [tasks, setTasks] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [editTaskId, setEditTaskId] = useState(null);
   const filePath = FileSystem.documentDirectory + "tasks.json";
 
   useEffect(() => {
@@ -27,10 +29,22 @@ const App = () => {
 
   const addTask = async () => {
     try {
-      const newTask = { id: Date.now(), name, lastName, email, password };
-      const updatedTasks = [...tasks, newTask];
-      await FileSystem.writeAsStringAsync(filePath, JSON.stringify(updatedTasks));
-      setTasks(updatedTasks);
+      if (editMode) {
+        // Edit existing task
+        const updatedTasks = tasks.map((task) =>
+          task.id === editTaskId ? { ...task, name, lastName, email, password } : task
+        );
+        await FileSystem.writeAsStringAsync(filePath, JSON.stringify(updatedTasks));
+        setTasks(updatedTasks);
+        setEditMode(false);
+        setEditTaskId(null);
+      } else {
+        // Add new task
+        const newTask = { id: Date.now(), name, lastName, email, password };
+        const updatedTasks = [...tasks, newTask];
+        await FileSystem.writeAsStringAsync(filePath, JSON.stringify(updatedTasks));
+        setTasks(updatedTasks);
+      }
       setName("");
       setLastName("");
       setEmail("");
@@ -38,6 +52,16 @@ const App = () => {
     } catch (error) {
       console.error("Error al agregar tarea", error);
     }
+  };
+
+  const editTask = (id) => {
+    const taskToEdit = tasks.find((task) => task.id === id);
+    setName(taskToEdit.name);
+    setLastName(taskToEdit.lastName);
+    setEmail(taskToEdit.email);
+    setPassword(taskToEdit.password);
+    setEditMode(true);
+    setEditTaskId(id);
   };
 
   const deleteTask = async (id) => {
@@ -74,6 +98,7 @@ const App = () => {
         password={password}
         setPassword={setPassword}
         addTask={addTask}
+        editMode={editMode}
       />
       <FlatList
         data={tasks}
@@ -85,6 +110,7 @@ const App = () => {
             <Text style={styles.taskText}>Correo: {item.email}</Text>
             <Text style={styles.taskText}>Contraseña: {item.password}</Text>
             <View style={styles.buttonContainer}>
+              <Button title="Editar" onPress={() => editTask(item.id)} />
               <Button title="Borrar" onPress={() => confirmDelete(item.id)} />
             </View>
           </View>
@@ -104,6 +130,7 @@ const TaskForm = ({
   password,
   setPassword,
   addTask,
+  editMode,
 }) => {
   return (
     <View style={styles.formContainer}>
@@ -112,7 +139,7 @@ const TaskForm = ({
         style={styles.input}
         placeholder="Apellido"
         value={lastName}
-        onChangeText={setLastName}
+        onChangeText={setLastName} //a
       />
       <TextInput style={styles.input} placeholder="Correo" value={email} onChangeText={setEmail} />
       <TextInput
@@ -122,7 +149,7 @@ const TaskForm = ({
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Agregar" onPress={addTask} />
+      <Button title={editMode ? "Guardar" : "Agregar"} onPress={addTask} />
     </View>
   );
 };
